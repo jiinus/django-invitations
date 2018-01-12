@@ -3,7 +3,7 @@ import json
 from django.views.generic import FormView, View
 from django.views.generic.detail import SingleObjectMixin
 from django.contrib import messages
-from django.http import Http404, HttpResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import redirect
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
@@ -105,7 +105,25 @@ class AcceptInvite(SingleObjectMixin, View):
         if app_settings.CONFIRM_INVITE_ON_GET:
             return self.post(*args, **kwargs)
         else:
-            raise Http404()
+            if self.request.is_ajax:
+                invitation = self.get_object()
+                response = {
+                    'invitation': {
+                        'email': invitation.email,
+                        'key': invitation.key,
+                        'sent': invitation.sent.isoformat() if invitation.sent else None,
+                        'inviter': {
+                            'username': invitation.inviter.username,
+                            'email': invitation.inviter.email,
+                            'full_name': invitation.inviter.get_full_name(),
+                            'first_name': invitation.inviter.first_name,
+                            'last_name': invitation.inviter.last_name,
+                        } if invitation.inviter else None
+                    } if invitation else None
+                }
+                return JsonResponse(response)
+            else:
+                raise Http404()
 
     def post(self, *args, **kwargs):
         self.object = invitation = self.get_object()
