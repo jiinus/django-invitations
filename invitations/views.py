@@ -107,6 +107,8 @@ class AcceptInvite(SingleObjectMixin, View):
         else:
             if self.request.is_ajax:
                 invitation = self.get_object()
+                if invitation.accepted:
+                    raise Http404()
                 response = {
                     'invitation': {
                         'email': invitation.email,
