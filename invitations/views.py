@@ -107,7 +107,7 @@ class AcceptInvite(SingleObjectMixin, View):
         else:
             if self.request.is_ajax:
                 invitation = self.get_object()
-                if invitation.accepted:
+                if not invitation or invitation.accepted or invitation.key_expired():
                     raise Http404()
                 response = {
                     'invitation': {
