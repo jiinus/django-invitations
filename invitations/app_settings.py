@@ -80,5 +80,11 @@ class AppSettings(object):
         """
         return self._setting("INVITATION_MODEL", "invitations.Invitation")
 
+    @property
+    def INVITATIONS_REQUIRE_VALID_USER(self):
+        """ Does invitation require valid user to be authenticated before accepting """
+        return self._setting("INVITATIONS_REQUIRE_VALID_USER", False)
+
+
 
 app_settings = AppSettings('INVITATIONS_')

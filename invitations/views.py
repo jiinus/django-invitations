@@ -98,6 +98,10 @@ class SendJSONInvite(View):
 class AcceptInvite(SingleObjectMixin, View):
     form_class = InviteForm
 
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        return super(AcceptInvite, self).dispatch(request, *args, **kwargs)
+
     def get_signup_redirect(self):
         return app_settings.SIGNUP_REDIRECT
 
@@ -167,6 +171,14 @@ class AcceptInvite(SingleObjectMixin, View):
             # Redirect to sign-up since they might be able to register anyway.
             return redirect(self.get_signup_redirect())
 
+        # Authenticated user is required but the user is not authenticated
+        if app_settings.INVITATIONS_REQUIRE_VALID_USER and not request.user.is_authenticated():
+            get_invitations_adapter().add_message(
+                self.request,
+                messages.ERROR,
+                'invitations/messages/invite_invalid.txt')
+            return redirect(app_settings.LOGIN_REDIRECT)
+
         # The invitation is valid.
         # Mark it as accepted now if ACCEPT_INVITE_AFTER_SIGNUP is False.
         if not app_settings.ACCEPT_INVITE_AFTER_SIGNUP:
@@ -195,7 +207,7 @@ def accept_invitation(invitation, request, signal_sender):
     invitation.accepted = True
     invitation.save()
 
-    invite_accepted.send(sender=signal_sender, email=invitation.email)
+    invite_accepted.send(sender=signal_sender, email=invitation.email, request=request)
 
     get_invitations_adapter().add_message(
         request,
