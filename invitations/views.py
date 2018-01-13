@@ -98,10 +98,6 @@ class SendJSONInvite(View):
 class AcceptInvite(SingleObjectMixin, View):
     form_class = InviteForm
 
-    @method_decorator(csrf_exempt)
-    def dispatch(self, request, *args, **kwargs):
-        return super(AcceptInvite, self).dispatch(request, *args, **kwargs)
-
     def get_signup_redirect(self):
         return app_settings.SIGNUP_REDIRECT
 
