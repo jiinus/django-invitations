@@ -189,6 +189,11 @@ class AcceptInvite(SingleObjectMixin, View):
 
         return redirect(self.get_signup_redirect())
 
+    def delete(self, *args, **kwargs):
+        invitation = self.get_object()
+        invitation.delete()
+        return HttpResponse(status=200)
+
     def get_object(self, queryset=None):
         if queryset is None:
             queryset = self.get_queryset()
