@@ -142,40 +142,64 @@ class AcceptInvite(SingleObjectMixin, View):
         # No invitation was found.
         if not invitation:
             # Newer behavior: show an error message and redirect.
-            get_invitations_adapter().add_message(
-                self.request,
-                messages.ERROR,
-                'invitations/messages/invite_invalid.txt')
-            return redirect(app_settings.LOGIN_REDIRECT)
+            if self.request.is_ajax:
+                return JsonResponse({
+                    'ok': False,
+                    'error': 'INVITATION_INVALID'
+                }, status=410)
+            else:
+                get_invitations_adapter().add_message(
+                    self.request,
+                    messages.ERROR,
+                    'invitations/messages/invite_invalid.txt')
+                return redirect(app_settings.LOGIN_REDIRECT)
 
         # The invitation was previously accepted, redirect to the login
         # view.
         if invitation.accepted:
-            get_invitations_adapter().add_message(
-                self.request,
-                messages.ERROR,
-                'invitations/messages/invite_already_accepted.txt',
-                {'email': invitation.email})
-            # Redirect to login since there's hopefully an account already.
-            return redirect(app_settings.LOGIN_REDIRECT)
+            if self.request.is_ajax:
+                return JsonResponse({
+                    'ok': False,
+                    'error': 'INVITATION_ALREADY_ACCEPTED'
+                }, status=410)
+            else:
+                get_invitations_adapter().add_message(
+                    self.request,
+                    messages.ERROR,
+                    'invitations/messages/invite_already_accepted.txt',
+                    {'email': invitation.email})
+                # Redirect to login since there's hopefully an account already.
+                return redirect(app_settings.LOGIN_REDIRECT)
 
         # The key was expired.
         if invitation.key_expired():
-            get_invitations_adapter().add_message(
-                self.request,
-                messages.ERROR,
-                'invitations/messages/invite_expired.txt',
-                {'email': invitation.email})
-            # Redirect to sign-up since they might be able to register anyway.
-            return redirect(self.get_signup_redirect())
+            if self.request.is_ajax:
+                return JsonResponse({
+                    'ok': False,
+                    'error': 'KEY_EXPIRED'
+                }, status=410)
+            else:
+                get_invitations_adapter().add_message(
+                    self.request,
+                    messages.ERROR,
+                    'invitations/messages/invite_expired.txt',
+                    {'email': invitation.email})
+                # Redirect to sign-up since they might be able to register anyway.
+                return redirect(self.get_signup_redirect())
 
         # Authenticated user is required but the user is not authenticated
         if app_settings.INVITATIONS_REQUIRE_VALID_USER and not request.user.is_authenticated():
-            get_invitations_adapter().add_message(
-                self.request,
-                messages.ERROR,
-                'invitations/messages/invite_invalid.txt')
-            return redirect(app_settings.LOGIN_REDIRECT)
+            if self.request.is_ajax:
+                return JsonResponse({
+                    'ok': False,
+                    'error': 'AUTHENTICATED_USER_REQUIRED'
+                }, status=410)
+            else:
+                get_invitations_adapter().add_message(
+                    self.request,
+                    messages.ERROR,
+                    'invitations/messages/invite_invalid.txt')
+                return redirect(app_settings.LOGIN_REDIRECT)
 
         # The invitation is valid.
         # Mark it as accepted now if ACCEPT_INVITE_AFTER_SIGNUP is False.
@@ -187,7 +211,10 @@ class AcceptInvite(SingleObjectMixin, View):
         get_invitations_adapter().stash_verified_email(
             self.request, invitation.email)
 
-        return redirect(self.get_signup_redirect())
+        if self.request.is_ajax:
+            return JsonResponse({ 'ok': True })
+        else:
+            return redirect(self.get_signup_redirect())
 
     def delete(self, *args, **kwargs):
         invitation = self.get_object()
