@@ -188,7 +188,7 @@ class AcceptInvite(SingleObjectMixin, View):
                 return redirect(self.get_signup_redirect())
 
         # Authenticated user is required but the user is not authenticated
-        if app_settings.INVITATIONS_REQUIRE_VALID_USER and not request.user.is_authenticated():
+        if app_settings.INVITATIONS_REQUIRE_VALID_USER and not request.user.is_authenticated:
             if self.request.is_ajax:
                 return JsonResponse({
                     'ok': False,
